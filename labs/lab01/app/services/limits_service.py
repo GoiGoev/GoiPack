@@ -61,31 +61,10 @@ def new_service():
 
 
 def check_values(service, amount, spent_today, spent_month, contactless=False):
-    context = LimitCheckContext(
-        amount=amount,
-        spent_today=spent_today,
-        spent_month=spent_month,
-        contactless=contactless,
-    )
-    return service.check(context)
-
-
-def projected_values(amount, spent_today, spent_month, contactless=False):
-    context = LimitCheckContext(
-        amount=amount,
-        spent_today=spent_today,
-        spent_month=spent_month,
-        contactless=contactless,
-    )
-    return context.projected_today()
-
-def new_service():
-    return LimitsService()
-
-
-def check_values(service, amount, spent_today, spent_month, contactless=False):
     context = LimitCheckContext(amount, spent_today, spent_month, contactless)
     return service.check(context)
 
+
 def projected_values(amount, spent_today, spent_month, contactless=False):
-    return spent_today.add(amount)
+    context = LimitCheckContext(amount, spent_today, spent_month, contactless)
+    return context.projected_today()
