@@ -32,3 +32,7 @@ class LimitCheckContext:
 
     def projected_today(self) -> Money:
         return self.spent_today.add(self.amount)
+
+
+    def projected_month(self) -> Money:
+        return self.spent_month.add(self.amount)
