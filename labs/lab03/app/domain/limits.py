@@ -1,40 +1,42 @@
+
 from app.support.errors import DomainError
 from app.support.types import Money
 
 
 class LimitCheckContext:
-    def __init__(self, amount: Money, spent_today: Money, spent_month: Money,
-                 contactless: bool = False):
-        if not all(isinstance(value, Money) for value in (amount, spent_today, spent_month)):
+    def __init__(
+        self,
+        amount: Money,
+        spent_today: Money,
+        spent_month: Money,
+        contactless: bool = False,
+        #правка - добавили расходы за неделю
+        spent_week: Money = None,
+    ):
+        #правка - проверяем денежные значения
+        if not all(
+            isinstance(value, Money)
+            for value in (amount, spent_today, spent_month)
+        ):
             raise DomainError("INVALID_CONTEXT")
-        if type(contactless) is not bool:
-            raise DomainError("INVALID_CONTEXT")
-        if amount.amount <= 0:
-            raise DomainError("INVALID_AMOUNT")
-        amount.same_currency(spent_today)
-        amount.same_currency(spent_month)
-        if spent_today.amount > spent_month.amount:
-            raise DomainError("INVALID_CONTEXT")
-        self._amount = amount
-        self._spent_today = spent_today
-        self._spent_month = spent_month
-        self._contactless = contactless
 
-    @property
-    def amount(self) -> Money:
-        return self._amount
+        self.amount = amount
+        self.spent_today = spent_today
+        self.spent_month = spent_month
+        self.contactless = contactless
 
-    @property
-    def spent_today(self) -> Money:
-        return self._spent_today
-
-    @property
-    def spent_month(self) -> Money:
-        return self._spent_month
-
-    @property
-    def contactless(self) -> bool:
-        return self._contactless
+        #правка - сохраняем недельные расходы
+        self.spent_week = spent_week
 
     def projected_today(self) -> Money:
-        return self.spent_today.add(self.amount)
+        #правка - проверяем валюту дневных расходов
+        self.amount.same_currency(self.spent_today)
+        return self.spent_today + self.amount
+
+    #правка - считаем недельные расходы после покупки
+    def projected_week(self) -> Money:
+        if not isinstance(self.spent_week, Money):
+            raise DomainError("INVALID_CONTEXT")
+
+        self.amount.same_currency(self.spent_week)
+        return self.spent_week + self.amount
