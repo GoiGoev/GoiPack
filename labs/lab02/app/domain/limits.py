@@ -15,15 +15,16 @@ class LimitCheckContext:
             raise DomainError("INVALID_AMOUNT")
         
         # Проверка что расходы сегодня < расходы за месяц
-        if spent_today.amount > spent_month.amount:
-            raise DomainError("INVALID_CONTEXT")
-
-        # Проверка валют
+               # Сначала проверяем совпадение валют
         if (
             amount.currency != spent_today.currency
             or amount.currency != spent_month.currency
         ):
             raise DomainError("CURRENCY_MISMATCH")
+
+        # Затем сравниваем дневные и месячные расходы
+        if spent_today.amount > spent_month.amount:
+            raise DomainError("INVALID_CONTEXT")
         
         self._amount = amount
         self._spent_today = spent_today
