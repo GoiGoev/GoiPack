@@ -1,5 +1,4 @@
 
-#правка - добавили инструменты для создания абстрактного класса
 from abc import ABC, abstractmethod
 
 from app.support.errors import DomainError
@@ -7,7 +6,6 @@ from app.support.types import Money, CheckResult
 from app.domain.limits import LimitCheckContext
 
 
-#правка - добавили ABC, чтобы общий класс нельзя было использовать без реализации check()
 class LimitRule(ABC):
     def __init__(self, maximum: Money):
         if not isinstance(maximum, Money):
@@ -18,16 +16,13 @@ class LimitRule(ABC):
     def maximum(self):
         return self._maximum
 
-    # ЛР3: оформить ABC и общий контракт результата.
-    #правка - сделали check() обязательным методом для наследников
+    #правка - общий контракт для всех правил
     @abstractmethod
     def check(self, context: LimitCheckContext) -> CheckResult:
         pass
 
 
 class TransactionLimit(LimitRule):
-    # Перенести существующее транзакционное ограничение.
-    #правка - добавили параметр code для бонусного задания
     def __init__(
         self,
         maximum: Money,
@@ -35,12 +30,12 @@ class TransactionLimit(LimitRule):
     ):
         super().__init__(maximum)
 
-        #правка - проверяем, что код ошибки не пустой
+        #правка - проверяем код отказа
         if not isinstance(code, str) or not code.strip():
             raise DomainError("INVALID_CONFIG")
+
         self._code = code
 
-    #правка - проверяем, что сумма покупки не превышает максимум
     def check(self, context: LimitCheckContext) -> CheckResult:
         if not isinstance(context, LimitCheckContext):
             raise DomainError("INVALID_CONTEXT")
@@ -54,8 +49,6 @@ class TransactionLimit(LimitRule):
 
 
 class DailyLimit(LimitRule):
-    # Перенести существующее дневное ограничение.
-    #правка - проверяем общие расходы за день с учётом текущей покупки
     def check(self, context: LimitCheckContext) -> CheckResult:
         if not isinstance(context, LimitCheckContext):
             raise DomainError("INVALID_CONTEXT")
@@ -65,5 +58,22 @@ class DailyLimit(LimitRule):
 
         if projected.amount > self.maximum.amount:
             return CheckResult(False, "DAILY_LIMIT_EXCEEDED")
+
+        return CheckResult(True)
+
+
+#правка - новое правило проверки недельного лимита
+class WeeklyLimit(LimitRule):
+    def check(self, context: LimitCheckContext) -> CheckResult:
+        if not isinstance(context, LimitCheckContext):
+            raise DomainError("INVALID_CONTEXT")
+
+        #правка - получаем недельные расходы с учётом покупки
+        projected = context.projected_week()
+        self.maximum.same_currency(projected)
+
+        #правка - отклоняем покупку при превышении лимита
+        if projected.amount > self.maximum.amount:
+            return CheckResult(False, "WEEKLY_LIMIT_EXCEEDED")
 
         return CheckResult(True)
