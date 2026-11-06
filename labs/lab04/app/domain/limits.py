@@ -36,13 +36,9 @@ class LimitCheckContext:
     def contactless(self) -> bool:
         return self._contactless
 
+    #ПОМЕНЯЛИ 
     def projected_today(self) -> Money:
-        return legacy_l4_limitcheckcontext_projected_today(self)
+        return self.spent_today.add(self.amount)
 
     def projected_month(self) -> Money:
         return self.spent_month.add(self.amount)
-
-
-# ЛР4: временный процедурный путь. Перенесите реализацию в названный метод объекта и удалите эту функцию.
-def legacy_l4_limitcheckcontext_projected_today(owner) -> Money:
-    return owner.spent_today.add(owner.amount)
