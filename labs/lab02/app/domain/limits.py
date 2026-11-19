@@ -5,31 +5,33 @@ from app.support.types import Money
 class LimitCheckContext:
     def __init__(self, amount: Money, spent_today: Money, spent_month: Money,
                  contactless: bool = False):
+        
         if not all(isinstance(value, Money) for value in (amount, spent_today, spent_month)):
             raise DomainError("INVALID_CONTEXT")
+
         if type(contactless) is not bool:
             raise DomainError("INVALID_CONTEXT")
-        
-        # Проверка суммы покупки > 0
+
+        # 1. Проверяем положительность суммы покупки
         if amount.amount <= 0:
             raise DomainError("INVALID_AMOUNT")
-        
-        # Проверка что расходы сегодня < расходы за месяц
-               # Сначала проверяем совпадение валют
+
+        # 2. Сначала проверяем совпадение валют
         if (
             amount.currency != spent_today.currency
             or amount.currency != spent_month.currency
         ):
             raise DomainError("CURRENCY_MISMATCH")
 
-        # Затем сравниваем дневные и месячные расходы
+        # 3. Только после проверки валют сравниваем расходы
         if spent_today.amount > spent_month.amount:
             raise DomainError("INVALID_CONTEXT")
-        
+
         self._amount = amount
         self._spent_today = spent_today
         self._spent_month = spent_month
         self._contactless = contactless
+
 
     @property
     def amount(self) -> Money:

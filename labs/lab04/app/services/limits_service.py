@@ -48,3 +48,4 @@ def diagnostic(context):
 
 def monthly_diagnostic(context):
     return context.projected_month()
+#задание по трис
