@@ -16,7 +16,7 @@ class LimitRule(ABC):
     def maximum(self):
         return self._maximum
 
-    #правка - общий контракт для всех правил
+    # общий контракт для всех правил
     @abstractmethod
     def check(self, context: LimitCheckContext) -> CheckResult:
         pass
@@ -30,7 +30,7 @@ class TransactionLimit(LimitRule):
     ):
         super().__init__(maximum)
 
-        #правка - проверяем код отказа
+        # проверяем код отказа
         if not isinstance(code, str) or not code.strip():
             raise DomainError("INVALID_CONFIG")
 
@@ -62,17 +62,21 @@ class DailyLimit(LimitRule):
         return CheckResult(True)
 
 
-#правка - новое правило проверки недельного лимита
+# новое правило проверки недельного лимита
 class WeeklyLimit(LimitRule):
     def check(self, context: LimitCheckContext) -> CheckResult:
         if not isinstance(context, LimitCheckContext):
             raise DomainError("INVALID_CONTEXT")
 
-        #правка - получаем недельные расходы с учётом покупки
+        # недельные расходы необязательны
+        if context.spent_week is None:
+            return CheckResult(True)
+
+        # получаем недельные расходы с учётом покупки
         projected = context.projected_week()
         self.maximum.same_currency(projected)
 
-        #правка - отклоняем покупку при превышении лимита
+        # отклоняем покупку при превышении лимита
         if projected.amount > self.maximum.amount:
             return CheckResult(False, "WEEKLY_LIMIT_EXCEEDED")
 
